@@ -1,21 +1,26 @@
-<?php
+<?php // $Id: mod_form.php,v 1.1.2.3 2009/03/06 15:47:04 mudrd8mz Exp $
 require_once ($CFG->dirroot.'/course/moodleform_mod.php');
 
 class mod_groupselect_mod_form extends moodleform_mod {
 
     function definition() {
-        global $COURSE;
+        global $CFG, $DB, $COURSE;
 
         $mform    =& $this->_form;
-
+	
+	    $mform->addElement('header', 'general', get_string('general', 'form'));
         $mform->addElement('text', 'name', get_string('groupselectname', 'groupselect'), array('size'=>'64'));
-        $mform->setType('name', PARAM_TEXT);
+        if (!empty($CFG->formatstringstriptags)) {
+            $mform->setType('name', PARAM_TEXT);
+        } else {
+            $mform->setType('name', PARAM_CLEANHTML);
+        }
         $mform->addRule('name', null, 'required', null, 'client');
 
-        $mform->addElement('htmleditor', 'intro', get_string('intro', 'groupselect'));
-        $mform->setType('intro', PARAM_RAW);
-        $mform->addRule('intro', get_string('required'), 'required', null, 'client');
-        $mform->setHelpButton('intro', array('questions', 'richtext'), false, 'editorhelpbutton');
+        $features = array('groups'=>true, 'groupings'=>true, 'groupmembersonly'=>true,
+                          'outcomes'=>false, 'gradecat'=>false, 'idnumber'=>false);
+
+	    $this->add_intro_editor(true, get_string('intro', 'groupselect'));
 
         $options = array();
         $options[0] = get_string('fromallgroups', 'groupselect');
@@ -38,9 +43,6 @@ class mod_groupselect_mod_form extends moodleform_mod {
         $mform->addElement('date_time_selector', 'timedue', get_string('timedue', 'groupselect'), array('optional'=>true));
         $mform->setDefault('timedue', 0);
 
-        $features = array('groups'=>true, 'groupings'=>true, 'groupmembersonly'=>true,
-                          'outcomes'=>false, 'gradecat'=>false, 'idnumber'=>false);
-    
         $this->standard_coursemodule_elements($features);
 
 //-------------------------------------------------------------------------------
@@ -64,3 +66,4 @@ class mod_groupselect_mod_form extends moodleform_mod {
         return $errors;
     }
 }
+?>

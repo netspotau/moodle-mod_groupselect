@@ -1,10 +1,33 @@
-<?php
+<?php  // $Id: lib.php,v 1.1.2.6 2009/03/13 16:44:02 mudrd8mz Exp $
 
 /**
  * Library of functions and constants of Group selection module
  *
  * @package mod/groupselect
  */
+
+/**
+ * Indicates API features that the groupselect supports.
+ *
+ * @uses FEATURE_GROUPS
+ * @uses FEATURE_GROUPINGS
+ * @uses FEATURE_GROUPMEMBERSONLY
+ * @uses FEATURE_MOD_INTRO
+ * @uses FEATURE_BACKUP_MOODLE2
+ * @param string $feature
+ * @return mixed True if yes (some features may use other values)
+ */
+function groupselect_supports($feature) {
+    switch($feature) {
+        case FEATURE_GROUPS:                  return true;
+        case FEATURE_GROUPINGS:               return true;
+        case FEATURE_GROUPMEMBERSONLY:        return true;
+        case FEATURE_MOD_INTRO:               return true;
+        case FEATURE_BACKUP_MOODLE2:          return true;
+
+        default: return null;
+    }
+}
 
 
 /**
@@ -27,7 +50,7 @@ function groupselect_is_open($groupselect) {
  * @return array of objects: [id] => object(->usercount ->id) where id is group id
  */
 function groupselect_group_member_counts($cm, $targetgrouping=0) {
-    global $CFG;
+    global $CFG, $DB;
 
     if (empty($CFG->enablegroupings) or empty($cm->groupingid) or empty($targetgrouping)) {
         //all groups
@@ -46,7 +69,7 @@ function groupselect_group_member_counts($cm, $targetgrouping=0) {
                        AND gg.groupingid = $targetgrouping
               GROUP BY g.id";  
     }
-    return get_records_sql($sql);
+    return $DB->get_records_sql($sql);
 }
 
 
@@ -58,10 +81,11 @@ function groupselect_group_member_counts($cm, $targetgrouping=0) {
  * $return int The id of the newly created instance
  */
 function groupselect_add_instance($groupselect) {
+    global $DB;
     $groupselect->timecreated = time();
     $groupselect->timemodified = time();
 
-    return insert_record('groupselect', $groupselect);
+    return $DB->insert_record('groupselect', $groupselect);
 }
 
 
@@ -72,10 +96,11 @@ function groupselect_add_instance($groupselect) {
  * @return bool
  */
 function groupselect_update_instance($groupselect) {
+    global $CFG, $DB;
     $groupselect->timemodified = time();
     $groupselect->id = $groupselect->instance;
 
-    return update_record('groupselect', $groupselect);
+    return $DB->update_record('groupselect', $groupselect);
 }
 
 
@@ -86,14 +111,14 @@ function groupselect_update_instance($groupselect) {
  * @return bool
  */
 function groupselect_delete_instance($id) {
- 
-    if (! $groupselect = get_record('groupselect', 'id', $id)) {
+    global $DB; 
+    if (! $groupselect = $DB->get_record('groupselect', array('id' => $id))) {
         return false;
     }
 
     $result = true;
 
-    if (! delete_records('groupselect', 'id', $groupselect->id)) {
+    if (! $DB->delete_records('groupselect', array('id' => $groupselect->id))) {
         $result = false;
     }
 
@@ -115,22 +140,21 @@ function groupselect_get_participants($groupselectid) {
 
 
 /**
- * groupselect_get_view_actions 
- * 
+ * groupselect_get_view_actions
+ *
  * @return array
  */
 function groupselect_get_view_actions() {
-    return array();
+    return array('view');
 }
 
-
 /**
- * groupselect_get_post_actions 
- * 
+ * groupselect_get_post_actions
+ *
  * @return array
  */
 function groupselect_get_post_actions() {
-    return array();
+    return array('signup', 'signout');
 }
 
 
@@ -143,3 +167,96 @@ function groupselect_get_post_actions() {
 function groupselect_reset_userdata($data) {
     return array();
 }
+
+function groupselect_save_limits ($groupselectid, $limits) {
+    global $DB;
+  $groupselectid = intval($groupselectid);
+  $in = implode(',', array_keys($limits));
+  # query for existing records which we can update or delete
+  if ($rs = $DB->get_recordset_select('groupselect_limits', "groupselect = $groupselectid", 
+                                        null, '', 'id, groupselect, groupid, lim')) {
+    # array to store IDs of rows we want to delete
+    $delete = array();
+    foreach ($rs as $grouplimit) {
+      if (isset($limits[$grouplimit->groupid])) {
+        if ($limits[$grouplimit->groupid] != $grouplimit->lim) {
+          # only need to update the row if the new limit is different to the
+          # existing record
+          $grouplimit->lim = $limits[$grouplimit->groupid];
+          $DB->update_record('groupselect_limits', $grouplimit);
+        }
+      } else {
+        # a limit for this groupid was left blank, so remove the row
+        $delete[] = $grouplimit->id;
+      }
+      unset($limits[$grouplimit->groupid]);
+    }
+
+    if (count($delete)) {
+      $delete_ids = implode(',', $delete);
+      $DB->delete_records_select('groupselect_limits', "id IN ($delete_ids)");
+    }
+  }
+
+  # insert all remaining limits
+  foreach ($limits as $groupid => $lim) {
+    $grouplimit = new object();
+    $grouplimit->groupselect = $groupselectid;
+    $grouplimit->groupid = $groupid;
+    $grouplimit->lim = $lim;
+    $DB->insert_record('groupselect_limits', $grouplimit);
+  }
+}
+
+function groupselect_retrieve_limits_formdata ($groupselectid) {
+    global $DB;
+  $formdata = array();
+  if ($grouplimits = $DB->get_records("groupselect_limits", array("groupselect" => $groupselectid))) {
+    foreach ($grouplimits as $grouplimit) {
+      $formdata['limit['.$grouplimit->groupid . ']'] = $grouplimit->lim;
+    }
+  }
+  
+  return $formdata;
+}
+
+function groupselect_get_limits ($groupselectid) {
+    global $DB;
+  $limits = array();
+  if ($grouplimits = $DB->get_records("groupselect_limits", array("groupselect" => $groupselectid))) {
+    foreach ($grouplimits as $grouplimit) {
+      $limits[$grouplimit->groupid] = $grouplimit->lim;
+    }
+  }
+
+  return $limits;
+}
+
+/**
+ * Adds module specific settings to the settings block
+ *
+ * @param settings_navigation $settings The settings navigation object
+ * @param navigation_node $forumnode The node to add module settings to
+ */
+function groupselect_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $groupselectnode) {
+    global $USER, $PAGE, $CFG, $DB, $OUTPUT;
+
+    $groupselectobject = $DB->get_record("groupselect", array("id" => $PAGE->cm->instance));
+    if (empty($PAGE->cm->context)) {
+        $PAGE->cm->context = get_context_instance(CONTEXT_MODULE, $PAGE->cm->instance);
+    }
+
+    // for some actions you need to be enrolled, being admin is not enough sometimes here
+    $enrolled = is_enrolled($PAGE->cm->context);
+
+    $canmanage  = has_capability('moodle/course:managegroups', $PAGE->cm->context);
+
+    if ($canmanage) {
+        //$mode = $groupselectnode->add(get_string('subscriptionmode', 'forum'), null, navigation_node::TYPE_CONTAINER);
+    } else if ($enrolled) {
+
+    }
+}
+
+
+?>

@@ -1,4 +1,4 @@
-<?php
+<?php //$Id: signup_form.php,v 1.1.2.2 2008/08/06 10:14:54 thepurpleblob Exp $
 
 require_once($CFG->dirroot.'/lib/formslib.php');
 
@@ -42,3 +42,5 @@ class signup_form extends moodleform {
         return $errors;
     }
 }
+
+?>

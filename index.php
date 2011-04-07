@@ -1,88 +1,93 @@
-<?php
+<?php // $Id: index.php,v 1.1.2.2 2008/08/06 10:14:54 thepurpleblob Exp $
+    require_once('../../config.php');
+    require_once('lib.php');
 
-require_once('../../config.php');
-require_once('lib.php');
+    $id = required_param('id', PARAM_INT);   // course
 
-$id = required_param('id', PARAM_INT);   // course
+    if (! $course = $DB->get_record('course', array('id'=>$id))) {
+        print_error('Course ID is incorrect');
+    }
+    $params = array();
+    $params['id'] = $id;
 
-if (! $course = get_record('course', 'id', $id)) {
-    error('Course ID is incorrect');
-}
+    require_course_login($course);
+    $coursecontext = get_context_instance(CONTEXT_COURSE, $course->id);
 
-require_course_login($course);
-
-add_to_log($course->id, 'groupselect', 'view all', "index.php?id=$course->id", '');
-
-
-// Get all required strings
-
-$strgroupselects = get_string('modulenameplural', 'groupselect');
-$strgroupselect  = get_string('modulename', 'groupselect');
+    add_to_log($course->id, 'groupselect', 'view all', "index.php?id=$course->id", '');
 
 
-// Print the header
+/// Get all required strings
 
-$navlinks = array();
-$navlinks[] = array('name' => $strgroupselects, 'link' => '', 'type' => 'activity');
-$navigation = build_navigation($navlinks);
+    $strgroupselects = get_string('modulenameplural', 'groupselect');
+    $strgroupselect  = get_string('modulename', 'groupselect');
 
-print_header_simple($strgroupselects, '', $navigation, '', '', true, '', navmenu($course));
 
-// Get all the appropriate data
+/// Print the header
 
-if (! $groupselects = get_all_instances_in_course('groupselect', $course)) {
-    notice(get_string('thereareno', 'moodle', $strgroupselects), "../../course/view.php?id=$course->id");
-    die();
-}
+    $PAGE->set_url('/mod/groupselect/index.php', $params);
+    $PAGE->set_pagelayout('incourse');
+    $PAGE->set_title("$course->shortname: $strgroupselects");
+    $PAGE->set_heading(format_string($course->fullname));
+    $PAGE->set_cacheable(true);
+    $PAGE->navbar->add($strgroupselects);
+    echo $OUTPUT->header();
 
-// Print the list of instances (your module will probably extend this)
+/// Get all the appropriate data
 
-$timenow  = time();
-$strname  = get_string('name');
-$strweek  = get_string('week');
-$strtopic = get_string('topic');
+    if (! $groupselects = get_all_instances_in_course('groupselect', $course)) {
+        notice(get_string('thereareno', 'moodle', $strgroupselects), "../../course/view.php?id=$course->id");
+        die();
+    }
 
-if ($course->format == 'weeks') {
-    $table->head  = array ($strweek, $strname);
-    $table->align = array ('center', 'left');
-} else if ($course->format == 'topics') {
-    $table->head  = array ($strtopic, $strname);
-    $table->align = array ('center', 'left', 'left', 'left');
-} else {
-    $table->head  = array ($strname);
-    $table->align = array ('left', 'left', 'left');
-}
+/// Print the list of instances (your module will probably extend this)
 
-$currentsection = '';
-foreach ($groupselects as $groupselect) {
-    if (!$groupselect->visible) {
-        //Show dimmed if the mod is hidden
-        $link = "<a class=\"dimmed\" href=\"view.php?id=$groupselect->coursemodule\">".format_string($groupselect->name,true)."</a>";
+    $timenow  = time();
+    $strname  = get_string('name');
+    $strweek  = get_string('week');
+    $strtopic = get_string('topic');
+
+    $table = new html_table();
+    if ($course->format == 'weeks') {
+        $table->head  = array ($strweek, $strname);
+        $table->align = array ('center', 'left');
+    } else if ($course->format == 'topics') {
+        $table->head  = array ($strtopic, $strname);
+        $table->align = array ('center', 'left', 'left', 'left');
     } else {
-        //Show normal if the mod is visible
-        $link = "<a href=\"view.php?id=$groupselect->coursemodule\">".format_string($groupselect->name,true)."</a>";
+        $table->head  = array ($strname);
+        $table->align = array ('left', 'left', 'left');
     }
-    $printsection = '';
-    if ($groupselect->section !== $currentsection) {
-        if ($groupselect->section) {
-            $printsection = $groupselect->section;
+
+    $currentsection = '';
+    foreach ($groupselects as $groupselect) {
+        if (!$groupselect->visible) {
+            //Show dimmed if the mod is hidden
+            $link = "<a class=\"dimmed\" href=\"view.php?id=$groupselect->coursemodule\">".format_string($groupselect->name,true)."</a>";
+        } else {
+            //Show normal if the mod is visible
+            $link = "<a href=\"view.php?id=$groupselect->coursemodule\">".format_string($groupselect->name,true)."</a>";
         }
-        if ($currentsection !== '') {
-            $table->data[] = 'hr';
+        $printsection = '';
+        if ($groupselect->section !== $currentsection) {
+            if ($groupselect->section) {
+                $printsection = $groupselect->section;
+            }
+            if ($currentsection !== '') {
+                $table->data[] = 'hr';
+            }
+            $currentsection = $groupselect->section;
         }
-        $currentsection = $groupselect->section;
+        if ($course->format == 'weeks' or $course->format == 'topics') {
+            $table->data[] = array ($printsection, $link);
+        } else {
+            $table->data[] = array ($link);
+        }
     }
-    if ($course->format == 'weeks' or $course->format == 'topics') {
-        $table->data[] = array ($printsection, $link);
-    } else {
-        $table->data[] = array ($link);
-    }
-}
 
-echo '<br />';
+    echo '<br />';
+    echo html_writer::table($table);
 
-print_table($table);
+/// Finish the page
 
-// Finish the page
-
-print_footer($course);
+    echo $OUTPUT->footer();
+?>

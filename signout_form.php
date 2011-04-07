@@ -1,4 +1,4 @@
-<?php
+<?php //$Id: signout_form.php,v 1.1.2.1 2009/04/07 11:10:13 anic Exp $
 
 require_once($CFG->dirroot.'/lib/formslib.php');
 
@@ -21,3 +21,5 @@ class signout_form extends moodleform {
     }
 
 }
+
+?>

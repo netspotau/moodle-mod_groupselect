@@ -47,23 +47,9 @@ $strgroupselect  = get_string('modulename', 'groupselect');
 $PAGE->set_title(format_string($groupselect->name));
 $PAGE->set_heading($course->fullname);
 $PAGE->set_cacheable(true);
-
-if ($groups) {
-    $data = array();
-
-    foreach ($groups as $group) {
-        $ismember  = isset($mygroups[$group->id]);
-        $usercount = isset($counts[$group->id]) ? $counts[$group->id]->usercount : 0;
-        $grpname   = format_string($group->name);
-
-        $line = array();
-        if ($ismember) {
-            $grpname = '<div class="mygroup">'.$grpname.'</div>';
-        }
-    }
-} else {
-    echo $OUTPUT->notification(get_string('nogroups', 'groupselect'));
-}
+$PAGE->set_cm($cm);
+$PAGE->set_context($context);
+$PAGE->set_pagelayout('incourse');
 
 $mform = new mod_groupselect_limits_form($groups);
 $formdata = array('id' => $id);
@@ -100,7 +86,22 @@ if (empty($CFG->enablegroupings) or empty($cm->groupingid)) {
 
 echo $OUTPUT->box(get_string('limits_intro', 'groupselect', intval($groupselect->maxmembers)), 
                     'intro generalbox boxwidthnormal boxaligncenter');
+if ($groups) {
+    $data = array();
 
+    foreach ($groups as $group) {
+        $ismember  = isset($mygroups[$group->id]);
+        $usercount = isset($counts[$group->id]) ? $counts[$group->id]->usercount : 0;
+        $grpname   = format_string($group->name);
+
+        $line = array();
+        if ($ismember) {
+            $grpname = '<div class="mygroup">'.$grpname.'</div>';
+        }
+    }
+} else {
+    echo $OUTPUT->notification(get_string('nogroups', 'groupselect'));
+}
 $mform->set_data($formdata);
 $mform->display();
 

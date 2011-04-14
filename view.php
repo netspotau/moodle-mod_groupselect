@@ -67,6 +67,7 @@
     $PAGE->set_cm($cm);
     $PAGE->set_context($context);
     $PAGE->set_cacheable(true);
+    $PAGE->set_pagelayout('incourse');
 
     if ($signup and !$hasgroup) {
         require_once('signup_form.php');

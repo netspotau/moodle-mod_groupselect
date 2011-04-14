@@ -86,7 +86,7 @@
             $usercount = isset($counts[$signup]) ?  $counts[$signup]->usercount : 0;
             $limits = groupselect_get_limits($groupselect->id);
             $signuplimit = isset($limits[$signup]) ? $limits[$signup] : $groupselect->maxmembers;
-            if ($signuplimit <= $usercount) {
+            if ($signuplimit <= $usercount && $signuplimit != 0) {
                 print_error("That group has already reached its signup limit");
             }
             groups_add_member($signup, $USER->id);

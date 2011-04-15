@@ -219,6 +219,8 @@
                 } else if (!$ismember and !$hasgroup)
                 {
                     $line[4] = format_text("<a title=\"$strsignup\" href=\"view.php?id=$cm->id&amp;signup=$group->id\">$strsignup</a> ");
+                } else {
+                    $line[4] = ''; // already in a group
                 }
             }
             $data[] = $line;

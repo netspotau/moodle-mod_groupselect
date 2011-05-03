@@ -29,13 +29,13 @@ function xmldb_groupselect_upgrade($oldversion=0) {
     /// Define field signuptype to be added to groupselect
         $table = new xmldb_table('groupselect');
         $field = new xmldb_field('signuptype');
-        $field->set_attributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, null, null, null, null, '0', 'intro');
+        $field->set_attributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, null, null, '0', 'intro');
         $result = $result && $dbman->add_field($table, $field);
 
     /// Define field timecreated to be added to groupselect
         $table = new xmldb_table('groupselect');
         $field = new xmldb_field('timecreated');
-        $field->set_attributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'timedue');
+        $field->set_attributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'timedue');
         $result = $result && $dbman->add_field($table, $field);
     }
 
@@ -44,14 +44,14 @@ function xmldb_groupselect_upgrade($oldversion=0) {
     /// Define field targetgrouping to be added to groupselect
         $table = new xmldb_table('groupselect');
         $field = new xmldb_field('targetgrouping');
-        $field->set_attributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'intro');
+        $field->set_attributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'intro');
         $result = $result && $dbman->add_field($table, $field);
     }
 
     if ($result && $oldversion < 2009061200) {
         $table = new xmldb_table('groupselect');
         $field = new xmldb_field('individual_limits');
-        $field->set_attributes(XMLDB_TYPE_INTEGER, '2', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0');
+        $field->set_attributes(XMLDB_TYPE_INTEGER, '2', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0');
         $result = $result && $dbman->add_field($table, $field);
 
         $table = new xmldb_table('groupselect_limits');
@@ -72,7 +72,7 @@ function xmldb_groupselect_upgrade($oldversion=0) {
     if ($result && $oldversion < 2010101300) {
         $table = new xmldb_table('groupselect');
         $field = new xmldb_field('introformat');
-        $field->set_attributes(XMLDB_TYPE_INTEGER, '4', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0');
+        $field->set_attributes(XMLDB_TYPE_INTEGER, '4', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0');
         $result = $result && $dbman->add_field($table, $field);
     }
 
